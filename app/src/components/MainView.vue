@@ -23,19 +23,16 @@
   <div id="app">
     <player v-ref:player></player>
     <search></search>
-    <video v-ref:video></video>
   </div>
 </template>
 
 <script>
 	import Search from './MainView/Search';
-  import Video from './MainView/Video';
   import Player from './MainView/Player'
 
   export default {
   	components: {
   		Search,
-      Video,
       Player
   	}
  	}

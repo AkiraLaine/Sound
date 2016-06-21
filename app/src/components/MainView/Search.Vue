@@ -1,10 +1,13 @@
 <style scoped>
 	#search {
 		transform: translateX(305px);
-		margin-top: -245px;
+		/*margin-top: -290px;*/
+		/*transition: visibility 0.4s ease;*/
+		position: absolute;
+		top: 20px;
 	}
 	input {
-		width: 85%;
+		width: 95%;
 		height: 50px;
 		background-color: #1f2a35;
 		border: none;
@@ -13,13 +16,13 @@
 		font-size: 1.1em;
 		padding: 0 10px;
 		color: white;
-		position: fixed;
+		/*position: fixed;*/
 		z-index: 1;
 		margin-top: -60px;
 		margin-left: 20px;
 	}
 	ul {
-		position: relative;
+		margin-top: 10px;
 		color: white;
 		list-style-type: none;
 	}
@@ -41,7 +44,7 @@
 	}
 	i {
 		position: absolute;
-    top: -47px;
+    /*top: -47px;*/
     z-index: 2;
     cursor: pointer;
  	}
@@ -52,7 +55,7 @@
 		<i class="material-icons" @click="returnHome()">keyboard_arrow_left</i>
 		<input v-model="query" @keypress.enter="search(query)" placeholder="Search for music..." />
 		<ul>
-			<li v-for="item in results" @click="playSong(item.snippet.title, item.id.videoId)">
+			<li v-for="item in results" @click="fetchSong(item.snippet.title, item.snippet.channelTitle, item.id.videoId)">
 				<p>{{item.snippet.title}}</p>
 				<h5>{{item.snippet.channelTitle}}</h5>
 			</li>
@@ -76,17 +79,19 @@
 			search (query) {
 				youtube.search(query, 10, (err, data) => {
 					if (err) console.log(err);
-					console.log(data);
+					// console.log(data);	
 					this.results = data.items;
 				})
 			},
-			playSong (title, id) {
-				// this.$parent.$refs.video.loadVideoById(id);
-				this.$parent.$refs.player.getMetadata(title);
-				document.getElementById("app").style.transform = "translateX(0)"
+			fetchSong (title, channel, id) {
+				this.$parent.$refs.player.loadVideoById(title, channel, id);
+				this.returnHome();
 			},
 			returnHome () {
-				document.getElementById("app").style.transform = "translateX(0)"
+				window.scrollTo(0,0);
+				document.getElementById("app").style.transform = "translateX(0)";
+				this.results = [];
+				this.query = "";
 			}
 		}
 	}
