@@ -16,6 +16,8 @@
 	}
 	.title {
 		font-size: 1.4em;
+		height: 55px;
+		overflow-y: auto;
 	}
 	.artist {
 		font-size: 0.9em;
@@ -44,16 +46,45 @@
     float: right;
     margin-right: 5px;
 	}
+	#volume {
+		-webkit-appearance: none;
+	  clear: both;
+		width: 50%;
+		margin: 0 auto;
+		margin-bottom: -6px;
+		height: 2px;
+		background-color: #7f8c8d;
+	  outline: none; 
+	  display: block;
+	  margin: 10px auto;
+	}
+	#volume::-webkit-slider-thumb {
+		-webkit-appearance: none;
+	  border: none;
+    height: 14px;
+    width: 14px;
+    border-radius: 50%;
+    background: #EF4836;
+    cursor: pointer;
+   }
+   .volume-text {
+   	float: right;
+    margin-top: -20px;
+    color: white;
+    margin-right: 31px;
+   }
 </style>
 
 <template>
 	<i class="material-icons search" @click="openSearch()">search</i>
 	<div id="player"></div>
-	<div>
+	<div id="progres-bar">
 		<p id="duration">{{remainingDuration}}/{{totalDuration}}</p>
 		<div id="progress"></div>
 		<div id="bar"></div>			
 	</div>
+	<input id="volume" type="range" min="0" max="100" @input="changeVolume()">
+	<p class="volume-text">{{volume}}%</p>
 	<p class="title">{{title}}</p>
 	<p id="artist" class="artist">{{artist}}</p>
 </template>
@@ -65,12 +96,17 @@
 		ready() {
 			let tag = document.createElement('script');
       tag.src = "https://www.youtube.com/iframe_api";
-      let firstScriptTag = document.getElementsByTagName('script')[0];
+      let firstScriptTag = document.getElementsByTagName('script')[0]; 	
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+			const title = document.getElementsByClassName('title');
 
       setTimeout(() => {
         this.onYouTubeIframeAPIReady();
       }, 2000)
+
+      setInterval(() => {
+      	
+      })
 		},
 		data () {
 			return {
@@ -79,7 +115,8 @@
 				artist: "Artist",
 				totalDuration: "00:00",
 				remainingDuration: "00:00",
-				totalSeconds: 0
+				totalSeconds: 0,
+				volume: 50
 			}
 		},
 		methods: {
@@ -94,7 +131,14 @@
           playerVars: {iv_load_policy: 3, showinfo: 0, fs: 0, controls: 0, rel: 0},
           events: {
             'onReady': (event) => event.target.playVideo(),
-            'onStateChange': (event) => {}
+            'onStateChange': (event) => {
+            	if (event.data === YT.PlayerState.PAUSED) {
+            		clearInterval(interval)
+            	}
+            	if (event.data === YT.PlayerState.PLAYING) {
+            		this.animateProgressBar(player.getCurrentTime())
+            	}
+            }
           }
         });
       },
@@ -113,7 +157,6 @@
 			  return this.totalSeconds;
 			},
 			formatTime (totalSeconds) {
-				console.log(totalSeconds)
 				let minutes = 0;
 				let seconds = 0;
 				if (totalSeconds > 60) {
@@ -126,7 +169,6 @@
 					minutes = 0;
 					seconds = totalSeconds;
 				}
-				console.log(minutes, seconds)
 				return `${this.addZero(minutes)}:${this.addZero(seconds)}`;
 			},
       loadVideoById (title, channel, id) {
@@ -137,15 +179,17 @@
 						console.log(data);
 						if (data !== undefined) { 
 							this.totalDuration = this.formatTime(this.convertYTDurationToS(data.data.items[0].contentDetails.duration));
-							this.animateProgressBar();
+							// this.animateProgressBar();
 						}
 					})	
       	this.title = title;
       	this.artist = channel;
       	player.loadVideoById(id)
+      	player.setVolume(this.volume);
       },
-      animateProgressBar () {
-      	let s = 0;
+      animateProgressBar (s) {
+      	// let s = 0;
+      	console.log(s);
       	let substract = false
       	const bar = document.getElementById("bar");
       	const totalProgressWidth = 304	;
@@ -156,10 +200,15 @@
 						bar.style.marginLeft = ""
 						return false;
 					}
-					this.remainingDuration = this.formatTime(s++)
+					this.remainingDuration = this.formatTime(Math.round(s++));
 					let spaceToMove = Number(document.getElementById("bar").style.marginLeft.split("px")[0]) + diff;
 					bar.style.marginLeft = spaceToMove + "px"; 
       	}, 1000)
+      },
+      changeVolume () {
+      	const value = document.getElementById("volume").value;
+      	this.volume =  value;
+      	player.setVolume(value)
       }
 		}
 	}

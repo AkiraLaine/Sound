@@ -67,6 +67,8 @@
 	import YouTube from 'youtube-node';
 	const youtube = new YouTube(); 
 	youtube.setKey("AIzaSyCdW-Y9dlblgcMUQmvSAsdqfF9HSjKVvXE");
+	youtube.addParam('type', 'video');
+	youtube.addParam('videoCategoryId', '10');
 
 	export default {
 		data () {
