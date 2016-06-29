@@ -85,29 +85,40 @@
 	</div>
 	<input id="volume" type="range" min="0" max="100" @input="changeVolume()">
 	<p class="volume-text">{{volume}}%</p>
-	<p class="title">{{title}}</p>
+	<p id="title" class="title">{{title}}</p>
 	<p id="artist" class="artist">{{artist}}</p>
 </template>
 
 <script>
-	let player, interval;
+	let player, interval, scroll;
 
 	export default {
 		ready() {
 			let tag = document.createElement('script');
-      tag.src = "https://www.youtube.com/iframe_api";
-      let firstScriptTag = document.getElementsByTagName('script')[0]; 	
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+			tag.src = "https://www.youtube.com/iframe_api";
+			let firstScriptTag = document.getElementsByTagName('script')[0]; 	
+			firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 			const title = document.getElementsByClassName('title');
 
-      setTimeout(() => {
-        this.onYouTubeIframeAPIReady();
-      }, 2000)
-
-      setInterval(() => {
-      	
-      })
-		},
+			window.onYouTubeIframeAPIReady = () => {
+				player = new YT.Player('player', {
+			    height: '305',
+			    width: '305',
+			    playerVars: {iv_load_policy: 3, showinfo: 0, fs: 0, controls: 0, rel: 0},
+			    events: {
+			      'onReady': (event) => event.target.playVideo(),
+			      'onStateChange': (event) => {
+			      	if (event.data === YT.PlayerState.PAUSED) {
+			      		clearInterval(interval)
+			      	}
+			      	if (event.data === YT.PlayerState.PLAYING) {
+			      		this.animateProgressBar(player.getCurrentTime())
+			      	}
+			      }
+			    }
+			  });
+			}
+ 		},
 		data () {
 			return {
 				src: "http://placehold.it/305x305",
@@ -116,7 +127,8 @@
 				totalDuration: "00:00",
 				remainingDuration: "00:00",
 				totalSeconds: 0,
-				volume: 50
+				volume: 50,
+				youtube: null
 			}
 		},
 		methods: {
@@ -124,24 +136,6 @@
 				document.getElementById("app").style.transform = "translateX(-305px)";
 				window.scrollTo(0,0);
 			},
-			onYouTubeIframeAPIReady () {
-        player = new YT.Player('player', {
-          height: '305',
-          width: '305',
-          playerVars: {iv_load_policy: 3, showinfo: 0, fs: 0, controls: 0, rel: 0},
-          events: {
-            'onReady': (event) => event.target.playVideo(),
-            'onStateChange': (event) => {
-            	if (event.data === YT.PlayerState.PAUSED) {
-            		clearInterval(interval)
-            	}
-            	if (event.data === YT.PlayerState.PLAYING) {
-            		this.animateProgressBar(player.getCurrentTime())
-            	}
-            }
-          }
-        });
-      },
       addZero (num) {
       	if (num < 10) num = `0${num}`;
       	return num;
@@ -173,6 +167,7 @@
 			},
       loadVideoById (title, channel, id) {
       	clearInterval(interval)
+      	clearInterval(scroll);
       	document.getElementById("bar").style.marginLeft = ""
       	this.$http.get("https://www.googleapis.com/youtube/v3/videos?id=" + id + "&key=AIzaSyCdW-Y9dlblgcMUQmvSAsdqfF9HSjKVvXE&part=contentDetails")
 					.then(data => {
@@ -186,10 +181,18 @@
       	this.artist = channel;
       	player.loadVideoById(id)
       	player.setVolume(this.volume);
+
+      	setTimeout(() => {
+	      	const t = document.getElementById("title");
+					const maxScrollTop = t.scrollHeight - t.clientHeight;
+					t.scrollTop = 0;
+					scroll = setInterval(() => {
+						if (t.scrollTop < maxScrollTop)	t.scrollTop = t.scrollTop + 5;
+						else t.scrollTop = 0;
+					}, 1000)
+				}, 100)
       },
       animateProgressBar (s) {
-      	// let s = 0;
-      	console.log(s);
       	let substract = false
       	const bar = document.getElementById("bar");
       	const totalProgressWidth = 304	;
