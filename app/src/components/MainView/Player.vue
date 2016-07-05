@@ -24,21 +24,6 @@
 		color: #EF4836;
 		text-transform: uppercase;
 	}
-	#progress {
-		clear: both;
-		width: 100%;
-		margin: 0 auto;
-		margin-bottom: -6px;
-		height: 2px;
-		background-color: #7f8c8d;
-	}
-	#bar {
-		width: 2px;
-		height: 10px;
-		background-color: #EF4836;
-    margin-bottom: 10px;
-    transition: margin-left 1s ease; 
-	}
 	#duration {
 		color: white;
     font-size: 0.7em;
@@ -46,17 +31,33 @@
     float: right;
     margin-right: 5px;
 	}
-	#volume {
+	#progress {
 		-webkit-appearance: none;
 	  clear: both;
-		width: 50%;
-		margin: 0 auto;
-		margin-bottom: -6px;
+		width: 90%;
 		height: 2px;
 		background-color: #7f8c8d;
 	  outline: none; 
 	  display: block;
-	  margin: 10px auto;
+	  margin: 20px auto;
+	}
+	#progress::-webkit-slider-thumb {
+		-webkit-appearance: none;
+	  border: none;
+    height: 10px;
+    width: 3px;
+    background: #EF4836;
+    cursor: pointer;
+   }
+	#volume {
+		-webkit-appearance: none;
+	  clear: both;
+		width: 50%;
+		height: 2px;
+		background-color: #7f8c8d;
+	  outline: none; 
+	  display: block;
+	  margin: 20px auto;
 	}
 	#volume::-webkit-slider-thumb {
 		-webkit-appearance: none;
@@ -69,7 +70,7 @@
    }
    .volume-text {
    	float: right;
-    margin-top: -20px;
+    margin-top: -32px;
     color: white;
     margin-right: 31px;
    }
@@ -78,11 +79,8 @@
 <template>
 	<i class="material-icons search" @click="openSearch()">search</i>
 	<div id="player"></div>
-	<div id="progres-bar">
-		<p id="duration">{{remainingDuration}}/{{totalDuration}}</p>
-		<div id="progress"></div>
-		<div id="bar"></div>			
-	</div>
+	<p id="duration">{{remainingDuration}}/{{totalDuration}}</p>
+	<input id="progress" type="range" min="0" max="100" @input="changeProgress()">
 	<input id="volume" type="range" min="0" max="100" @input="changeVolume()">
 	<p class="volume-text">{{volume}}%</p>
 	<p id="title" class="title">{{title}}</p>
@@ -90,7 +88,7 @@
 </template>
 
 <script>
-	let player, interval, scroll;
+	let player, interval, scroll, dataInterval;
 
 	export default {
 		ready() {
@@ -109,13 +107,15 @@
 			      'onReady': (event) => event.target.playVideo(),
 			      'onStateChange': (event) => {
 			      	if (event.data === YT.PlayerState.PAUSED) {
-			      		clearInterval(interval)
+			      		clearInterval(dataInterval)
 			      	}
 			      	if (event.data === YT.PlayerState.PLAYING) {
-			      		this.animateProgressBar(player.getCurrentTime())
+			      		clearInterval(dataInterval)
+			      		this.animateProgressBar(player.getCurrentTime());
 			      	}
 			      	if (event.data === YT.PlayerState.ENDED) {
 			      		this.checkQueue();
+			      		clearInterval(dataInterval);
 			      	}
 			      }
 			    }
@@ -130,7 +130,7 @@
 				remainingDuration: "00:00",
 				totalSeconds: 0,
 				volume: 50,
-				youtube: null
+				s: 0
 			}
 		},
 		methods: {
@@ -168,14 +168,16 @@
 				return `${this.addZero(minutes)}:${this.addZero(seconds)}`;
 			},
       loadVideoById (title, channel, id) {
-      	clearInterval(interval)
       	clearInterval(scroll);
-      	document.getElementById("bar").style.marginLeft = ""
+      	clearInterval(dataInterval)
+				document.getElementById("progress").value = 0;
+      	// document.getElementById("bar").style.marginLeft = ""
       	this.$http.get("https://www.googleapis.com/youtube/v3/videos?id=" + id + "&key=AIzaSyCdW-Y9dlblgcMUQmvSAsdqfF9HSjKVvXE&part=contentDetails")
 					.then(data => {
 						console.log(data);
 						if (data !== undefined) { 
 							this.totalDuration = this.formatTime(this.convertYTDurationToS(data.data.items[0].contentDetails.duration));
+							document.getElementById("progress").setAttribute("max", this.totalSeconds);
 							// this.animateProgressBar();
 						}
 					})	
@@ -195,20 +197,20 @@
 				}, 100)
       },
       animateProgressBar (s) {
-      	let substract = false
-      	const bar = document.getElementById("bar");
-      	const totalProgressWidth = 304	;
-      	let diff = Number(totalProgressWidth / this.totalSeconds) 
-      	interval = setInterval(() => {
-      		if(Number(bar.style.marginLeft.split("px")[0]) >= totalProgressWidth) {
-						clearInterval(interval);
-						bar.style.marginLeft = ""
-						return false;
-					}
-					this.remainingDuration = this.formatTime(Math.round(s++));
-					let spaceToMove = Number(document.getElementById("bar").style.marginLeft.split("px")[0]) + diff;
-					bar.style.marginLeft = spaceToMove + "px"; 
+      	this.s = s;
+      	dataInterval = setInterval(() => {
+					if(this.s <= player.getDuration()) {
+						this.remainingDuration = this.formatTime(Math.round(this.s++));
+						document.getElementById("progress").value = this.s;
+	      	} else {
+	      		clearInterval(dataInterval)
+	      	}
       	}, 1000)
+      },
+      changeProgress () {
+      	this.s = document.getElementById("progress").value;
+				this.remainingDuration = this.formatTime(Math.round(this.s++));
+      	player.seekTo(this.s)
       },
       changeVolume () {
       	const value = document.getElementById("volume").value;
