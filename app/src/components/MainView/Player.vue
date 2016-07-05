@@ -86,7 +86,7 @@
 	<input id="volume" type="range" min="0" max="100" @input="changeVolume()">
 	<p class="volume-text">{{volume}}%</p>
 	<p id="title" class="title">{{title}}</p>
-	<p id="artist" class="artist">{{artist}}</p>
+	<p id="artist" class="artist" @click="skip()">{{artist}}</p>
 </template>
 
 <script>
@@ -114,6 +114,9 @@
 			      	if (event.data === YT.PlayerState.PLAYING) {
 			      		this.animateProgressBar(player.getCurrentTime())
 			      	}
+			      	if (event.data === YT.PlayerState.ENDED) {
+			      		this.checkQueue();
+			      	}
 			      }
 			    }
 			  });
@@ -121,7 +124,6 @@
  		},
 		data () {
 			return {
-				src: "http://placehold.it/305x305",
 				title: "Title",
 				artist: "Artist",
 				totalDuration: "00:00",
@@ -212,6 +214,20 @@
       	const value = document.getElementById("volume").value;
       	this.volume =  value;
       	player.setVolume(value)
+      },
+      addToQueue (title, channel, id) {
+				let queue = JSON.parse(localStorage.getItem("queue"));
+				queue.push({title, channel, id});
+				localStorage.setItem("queue", JSON.stringify(queue));
+      },
+      checkQueue () {
+      	let queue = JSON.parse(localStorage.getItem("queue"));
+      	this.loadVideoById(queue[0].title, queue[0].channel, queue[0].id);
+      	queue.shift();
+      	localStorage.setItem("queue", JSON.stringify(queue));
+      },
+      skip () {
+      	player.seekTo(209)
       }
 		}
 	}

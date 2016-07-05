@@ -37,6 +37,9 @@
 	p, h5 {
 		padding: 3px 10px;
 	}
+	p {
+		width: 85%;
+	}
 	h5 {
 		color: #EF4836;
 		text-transform: uppercase;
@@ -44,9 +47,11 @@
 	}
 	i {
 		position: absolute;
-    /*top: -47px;*/
     z-index: 2;
     cursor: pointer;
+ 	}
+ 	i#plus {
+		right: 10px;
  	}
 </style>
 
@@ -56,6 +61,7 @@
 		<input v-model="query" @keypress.enter="search(query)" placeholder="Search for music..." />
 		<ul>
 			<li v-for="item in results" @click="fetchSong(item.snippet.title, item.snippet.channelTitle, item.id.videoId)">
+				<i id="plus" class="material-icons" @click.stop="addToQueue(item.snippet.title, item.snippet.channelTitle, item.id.videoId, $event)">add</i>
 				<p>{{item.snippet.title}}</p>
 				<h5>{{item.snippet.channelTitle}}</h5>
 			</li>
@@ -88,6 +94,9 @@
 			fetchSong (title, channel, id) {
 				this.$parent.$refs.player.loadVideoById(title, channel, id);
 				this.returnHome();
+			},
+			addToQueue (title, channel, id, e) {
+				this.$parent.$refs.player.addToQueue(title, channel, id);
 			},
 			returnHome () {
 				window.scrollTo(0,0);

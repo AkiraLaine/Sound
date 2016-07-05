@@ -20,5 +20,7 @@
 </template>
 
 <script>
-
+  if (localStorage.getItem("queue") === null) {
+    localStorage.setItem("queue", JSON.stringify([]))
+  }
 </script>
