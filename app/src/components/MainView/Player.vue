@@ -149,7 +149,7 @@
 			  let minutes = (parseInt(match[2]) || 0);
 			  let seconds = (parseInt(match[3]) || 0);
 
-			  this.totalSeconds = minutes * 60 + seconds;
+			  thi	s.totalSeconds = minutes * 60 + seconds;
 			  return this.totalSeconds;
 			},
 			formatTime (totalSeconds) {
